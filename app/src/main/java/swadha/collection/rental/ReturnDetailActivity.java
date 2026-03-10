@@ -83,6 +83,7 @@ public class ReturnDetailActivity extends AppCompatActivity {
         bookingTimestamp = getIntent().getStringExtra("timestamp");
         if (bookingTimestamp == null) {
             Toast.makeText(this, "Invalid booking data", Toast.LENGTH_SHORT).show();
+            setResult(RESULT_OK);
             finish();
             return;
         }
@@ -343,11 +344,23 @@ public class ReturnDetailActivity extends AppCompatActivity {
         }
 
         View view = getLayoutInflater().inflate(R.layout.dialogue_return_item,null);
+        TextView tvTitle = view.findViewById(R.id.textviewtitle_dialoue);
+
+        if(action.equals("pickup")){
+            tvTitle.setText("Collect Rent");
+        }
+        else if(action.equals("cancel")){
+            tvTitle.setText("Cancel Booking");
+        }
+        else if(action.equals("return")){
+            tvTitle.setText("Return Items");
+        }
 
         ListView listView = view.findViewById(R.id.listItems);
         EditText amountInput = view.findViewById(R.id.etRefund);
 
         amountInput.setText(String.valueOf(suggestedAmount));
+
 
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(this,

@@ -87,13 +87,7 @@
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:letterSpacing="0.2"/>
-                <CheckBox
-                    android:id="@+id/cbRequiresWash"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Requires Washing ?"
-                    android:textColor="#1A1C1E"/>
+
                 <GridLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -162,6 +156,15 @@
                         app:cornerRadius="14dp"
                         style="@style/Widget.MaterialComponents.Button.TextButton" />
                 </GridLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSearchItems"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:text="Search Available Items"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#0A0A0A"
+                    android:layout_marginTop="12dp"
+                    app:cornerRadius="16dp"/>
             </LinearLayout>
 
             <LinearLayout

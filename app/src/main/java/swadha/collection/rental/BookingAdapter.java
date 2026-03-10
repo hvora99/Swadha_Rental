@@ -1,11 +1,15 @@
     package swadha.collection.rental;
 
+    import android.app.Activity;
     import android.content.Intent;
+    import android.content.res.ColorStateList;
     import android.graphics.Color;
+    import android.graphics.drawable.GradientDrawable;
     import android.util.Log;
     import android.view.LayoutInflater;
     import android.view.View;
     import android.view.ViewGroup;
+    import android.widget.ProgressBar;
     import android.widget.TextView;
     import androidx.annotation.NonNull;
     import androidx.recyclerview.widget.RecyclerView;
@@ -59,6 +63,7 @@
 
             long pickupMs = booking.getPickupMs();
             long returnMs = booking.getReturnMs();
+            long actualPickupMs = booking.getActualPickupMs();
 
             Date pickupDate = new Date(pickupMs);
             Date returnDate = new Date(returnMs);
@@ -89,16 +94,113 @@
             holder.tvReturnTime.setText(timeFormat.format(returnDate));
 
 
-            int color = Color.parseColor("#800020"); // default
+            int color;
 
-            if (returnToday) {
-                color = Color.parseColor("#D32F2F"); // red
+            // Priority logic
+            if(status.equalsIgnoreCase("Returned")){
+                color = Color.parseColor("#2E7D32");   // green
             }
-            else if (pickupToday) {
-                color = Color.parseColor("#1976D2"); // blue
+            else if(status.equalsIgnoreCase("PickedUp")){
+                color = Color.parseColor("#FB8C00");   // orange
+            }
+            else if(returnToday){
+                color = Color.parseColor("#D32F2F");   // red (return today)
+            }
+            else if(pickupToday){
+                color = Color.parseColor("#1976D2");   // blue (pickup today)
+            }
+            else{
+                color = Color.parseColor("#800020");   // default
             }
 
             holder.brandAccent.setBackgroundColor(color);
+
+            GradientDrawable bg =
+                    (GradientDrawable) holder.tvItemCircle.getBackground();
+            bg.setColor(color);
+
+            ////////   ///////////
+            // -------------------
+            // Emergency textbox
+            // -------------------
+
+            long now = System.currentTimeMillis();
+
+            long pickupDiff = pickupMs - now;
+            long returnDiff = returnMs - now;
+
+            long pickupHours = pickupDiff / (1000 * 60 * 60);
+            long returnHours = returnDiff / (1000 * 60 * 60);
+
+            // -------------------
+            // PICKUP ALERT
+            // -------------------
+
+            if(status.equalsIgnoreCase("Booked")){
+
+                if(pickupDiff < 0){
+
+                    long overdue = Math.abs(pickupHours);
+
+                    holder.tvReturnUrgency.setText("⚠ Pickup overdue by " + overdue + "h");
+                    holder.tvReturnUrgency.setTextColor(Color.parseColor("#B71C1C"));
+
+                }
+                else if(isToday(new Date(pickupMs))){
+
+                    holder.tvReturnUrgency.setText("Pickup Today");
+                    holder.tvReturnUrgency.setTextColor(Color.parseColor("#1976D2"));
+                }
+
+            }
+
+            // -------------------
+            // PICKED UP INFO
+            // -------------------
+
+            else if(status.equalsIgnoreCase("PickedUp")){
+
+                if(actualPickupMs > 0){
+
+                    long diff = now - actualPickupMs;
+                    long hrs = diff / (1000 * 60 * 60);
+
+                    if(hrs <= 2){
+
+                        holder.tvReturnUrgency.setText("✓ Picked up " + hrs + "h ago");
+                        holder.tvReturnUrgency.setTextColor(Color.parseColor("#2E7D32"));
+
+                    }
+
+                }
+
+            }
+
+            // -------------------
+            // RETURN ALERT
+            // -------------------
+
+            if(returnDiff < 0){
+
+                long overdue = Math.abs(returnHours);
+
+                holder.tvReturnUrgency.setText("⚠ Overdue by " + overdue + "h");
+                holder.tvReturnUrgency.setTextColor(Color.parseColor("#B71C1C"));
+
+            }
+            else if(returnHours <= 3){
+
+                holder.tvReturnUrgency.setText("⚠ Return in " + returnHours + "h");
+                holder.tvReturnUrgency.setTextColor(Color.parseColor("#D32F2F"));
+
+            }
+            else if(returnToday){
+
+                holder.tvReturnUrgency.setText("Return Today");
+                holder.tvReturnUrgency.setTextColor(Color.parseColor("#FB8C00"));
+
+            }
+            ////////////////////////////////////////
 
             try {
 
@@ -155,8 +257,7 @@
                         new ArrayList<>(booking.getItems())
                 );
 
-                v.getContext().startActivity(intent);
-            });
+                ((Activity) v.getContext()).startActivityForResult(intent, 100);            });
 
             double totalRent = booking.getTotalRent();
             double rentPaid = booking.getRentPaid();
@@ -237,6 +338,7 @@
             TextView tvItemCircle, tvCustomerName, tvBalance;
             TextView tvPickupDate, tvPickupTime, tvReturnDate, tvReturnTime;
             View brandAccent;
+            TextView tvReturnUrgency;
             public BookingViewHolder(@NonNull View itemView) {
                 super(itemView);
                 tvItemCircle = itemView.findViewById(R.id.tvItemCircle);
@@ -247,6 +349,8 @@
                 tvReturnTime = itemView.findViewById(R.id.tvRowReturnTime);
                 tvBalance = itemView.findViewById(R.id.tvRowBalance);
                 brandAccent = itemView.findViewById(R.id.brandAccent);
+                tvReturnUrgency = itemView.findViewById(R.id.tvReturnUrgency);
+
 
             }
         }

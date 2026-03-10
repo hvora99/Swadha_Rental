@@ -34,6 +34,7 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.button.MaterialButton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,7 +60,7 @@ public class NewBookingActivity extends AppCompatActivity {
 
     private List<ItemModel> availableItems = new ArrayList<>();
     private List<ItemModel> selectedItems = new ArrayList<>();
-
+    MaterialButton btnSearchItems;
 
     String url = "https://script.google.com/macros/s/AKfycby9Bfc8ohJDS6bvWDu1I8E21yxzRg_GQBhpRXkzY9hLfcKrDlqzxYe2LyMl4Vmb6CXj/exec";
     private AlertDialog progressDialog;
@@ -73,7 +74,6 @@ public class NewBookingActivity extends AppCompatActivity {
     private static final int TYPE_WASH   = 3;
 
     private Calendar washCalendar = Calendar.getInstance();
-    private CheckBox cbRequiresWash;
 
     List<BookingItem> bookingItems = new ArrayList<>();
 
@@ -97,53 +97,16 @@ public class NewBookingActivity extends AppCompatActivity {
         RentPaidNow = findViewById(R.id.etRentPaidNow);
         btnWashDate = findViewById(R.id.btnWashDate);
         btnWashTime = findViewById(R.id.btnWashTime);
-        cbRequiresWash = findViewById(R.id.cbRequiresWash);
-
+        btnSearchItems = findViewById(R.id.btnSearchItems);
         layoutSelectedItems = findViewById(R.id.layoutSelectedItems);
 
-        layoutSelectedItems.setOnClickListener(v -> {
 
-            if(selectedItems.isEmpty()){
-
-                if(validateDateTime()){
-                    fetchAvailableItems();
-                }
-
-            }
-
-        });
        // fetchAvailableItems();
 
-        cbRequiresWash.setOnCheckedChangeListener((buttonView, isChecked) -> {
 
-            if (isChecked) {
-
-                washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
-                updateWashButtonText();
-
-                btnWashDate.setEnabled(true);
-                btnWashTime.setEnabled(true);
-
-                btnWashDate.setAlpha(1f);
-                btnWashTime.setAlpha(1f);
-            }
-            else {
-                // Auto set wash = return
-                washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
-
-
-                updateWashButtonText();
-
-                btnWashDate.setEnabled(false);
-                btnWashTime.setEnabled(false);
-
-                btnWashDate.setAlpha(0.4f);
-                btnWashTime.setAlpha(0.4f);
-            }
-        });
-        cbRequiresWash.setChecked(false);
         btnWashDate.setEnabled(false);
         btnWashTime.setEnabled(false);
+
         btnWashDate.setAlpha(0.4f);
         btnWashTime.setAlpha(0.4f);
 
@@ -165,6 +128,16 @@ public class NewBookingActivity extends AppCompatActivity {
         btnSaveBooking.setEnabled(false); // Disable by default
         btnSaveBooking.setBackgroundColor(Color.GRAY);
 
+        btnSearchItems.setOnClickListener(v -> {
+
+            if(!validateDateTime()){
+                return;
+            }
+
+            fetchAvailableItems();
+
+        });
+
 
     }
 
@@ -178,6 +151,12 @@ public class NewBookingActivity extends AppCompatActivity {
 
         btnSaveBooking.setEnabled(false);
         btnSaveBooking.setBackgroundColor(Color.GRAY);
+
+        btnWashDate.setEnabled(false);
+        btnWashTime.setEnabled(false);
+
+        btnWashDate.setAlpha(0.4f);
+        btnWashTime.setAlpha(0.4f);
     }
 
     private void fetchAvailableItems() {
@@ -451,6 +430,35 @@ public class NewBookingActivity extends AppCompatActivity {
         double totalRent = 0;
         double totalDeposit = 0;
 
+        boolean washRequired = false;
+
+        for(ItemModel item : selectedItems){
+            if(item.isRequiresWash()){
+                washRequired = true;
+                break;
+            }
+        }
+
+        if(washRequired){
+
+            btnWashDate.setEnabled(true);
+            btnWashTime.setEnabled(true);
+
+            btnWashDate.setAlpha(1f);
+            btnWashTime.setAlpha(1f);
+
+        }else{
+
+            washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
+            updateWashButtonText();
+
+            btnWashDate.setEnabled(false);
+            btnWashTime.setEnabled(false);
+
+            btnWashDate.setAlpha(0.4f);
+            btnWashTime.setAlpha(0.4f);
+        }
+
         for(ItemModel item : selectedItems){
 
             totalRent += item.getRent();
@@ -598,6 +606,10 @@ public class NewBookingActivity extends AppCompatActivity {
                     pickupCal.get(Calendar.DAY_OF_MONTH)
             );
 
+// ⭐ restrict date range
+            dp.getDatePicker().setMinDate(pickupCalendar.getTimeInMillis());
+            dp.getDatePicker().setMaxDate(returnCalendar.getTimeInMillis());
+
             dp.show();
         });
 
@@ -643,6 +655,10 @@ public class NewBookingActivity extends AppCompatActivity {
                     returnCal.get(Calendar.DAY_OF_MONTH)
             );
 
+// restrict range
+            dp.getDatePicker().setMinDate(pickupCalendar.getTimeInMillis());
+            dp.getDatePicker().setMaxDate(returnCalendar.getTimeInMillis());
+
             dp.show();
         });
 
@@ -676,6 +692,7 @@ public class NewBookingActivity extends AppCompatActivity {
 
                     item.setPickupMs(pickupCal.getTimeInMillis());
                     item.setReturnMs(returnCal.getTimeInMillis());
+                    updateSelectedItemsUI();
 
                 })
                 .setNegativeButton("Cancel",null)
@@ -754,10 +771,8 @@ public class NewBookingActivity extends AppCompatActivity {
                         btnReturnDate.setText("Return: " + day + "/" + (month + 1));
                         clearItemCache();
 
-                        if (!cbRequiresWash.isChecked()) {
-                            washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
-                            updateWashButtonText();
-                        }
+                        washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
+                        updateWashButtonText();
 
                     } else if (type == TYPE_WASH) {
 
@@ -811,10 +826,8 @@ public class NewBookingActivity extends AppCompatActivity {
                         clearItemCache();
 
 
-                        if (!cbRequiresWash.isChecked()) {
-                            washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
-                            updateWashButtonText();
-                        }
+                        washCalendar.setTimeInMillis(returnCalendar.getTimeInMillis());
+                        updateWashButtonText();
 
                     }else if (type == TYPE_WASH) {
 
@@ -849,11 +862,9 @@ public class NewBookingActivity extends AppCompatActivity {
             return false;
         }
 
-        if (cbRequiresWash.isChecked()) {
-            if (washMs < returnMs) {
-                Toast.makeText(this, "Wash time must be after Return", Toast.LENGTH_SHORT).show();
-                return false;
-            }
+        if (washMs < returnMs) {
+            Toast.makeText(this, "Wash time must be after Return", Toast.LENGTH_SHORT).show();
+            return false;
         }
 
         return true;
