@@ -545,27 +545,7 @@ public class NewBookingActivity extends AppCompatActivity {
         btnSaveBooking.setBackgroundColor(Color.parseColor("#4CAF50"));
     }
 
-    private void editItemTimeline(){
 
-        String[] itemCodes = new String[bookingItems.size()];
-
-        for(int i=0;i<bookingItems.size();i++){
-            itemCodes[i] = bookingItems.get(i).getItemNo();
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Edit Item Timeline");
-
-        builder.setItems(itemCodes,(dialog,which)->{
-
-            BookingItem item = bookingItems.get(which);
-
-            showTimelineEditor(item);
-
-        });
-
-        builder.show();
-    }
 
     private void showTimelineEditor(BookingItem item){
 
@@ -919,6 +899,18 @@ public class NewBookingActivity extends AppCompatActivity {
             Toast.makeText(this,"Internal booking error",Toast.LENGTH_SHORT).show();
             return;
         }
+
+        long globalWashMs = washCalendar.getTimeInMillis();
+
+        for (BookingItem item : bookingItems) {
+
+            if (item.isRequiresWash()) {
+                item.setWashMs(globalWashMs);
+            } else {
+                item.setWashMs(item.getReturnMs());
+            }
+        }
+
         JSONObject jsonBody = new JSONObject();
         try {
             jsonBody.put("action", "add");
@@ -992,7 +984,7 @@ public class NewBookingActivity extends AppCompatActivity {
             @Override
             public String getBodyContentType() { return "application/json; charset=utf-8"; }
         };
-
+        Log.d("BOOKING_DEBUG", jsonBody.toString());
         request.setRetryPolicy(new DefaultRetryPolicy(30000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         Volley.newRequestQueue(this).add(request);
     }

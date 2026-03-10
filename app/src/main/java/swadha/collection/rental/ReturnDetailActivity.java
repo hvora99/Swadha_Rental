@@ -175,27 +175,38 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
 
         BtnMarkReceived.setOnClickListener(v -> {
-            openItemSelectionDialog("Select Items Returned", itemsList);
+
+            showItemActionDialog(
+                    "Return Items",
+                    "return",
+                    getReturnItems(),
+                    deposit
+            );
+
         });
 
         btnPickedUp.setOnClickListener(v -> {
 
-            showPickupDialog(
-                    orderId,
-                    getPickupAllowedItems(),
-                    totalRent,
-                    rentPaid
+            double remainingRent = totalRent - rentPaid;
+
+            showItemActionDialog(
+                    "Pick Up Items",
+                    "pickup",
+                    getPickupItems(),
+                    remainingRent
             );
 
         });
 
         btnCancel.setOnClickListener(v -> {
 
-            showCancelDialog(
-                    orderId,
+            double refund = deposit + rentPaid;
+
+            showItemActionDialog(
+                    "Cancel Items",
+                    "cancel",
                     getCancelableItems(),
-                    deposit,
-                    rentPaid
+                    refund
             );
 
         });
@@ -252,35 +263,49 @@ public class ReturnDetailActivity extends AppCompatActivity {
         }
     }
 
-    private ArrayList<String> getPickupAllowedItems(){
+    private ArrayList<RentalBooking.ItemStatus> getPickupItems(){
 
-        ArrayList<String> allowed = new ArrayList<>();
-
-        for(RentalBooking.ItemStatus item : itemsList){
-
-            if(item.getStatus().equals("Booked")){
-                allowed.add(item.getItemNo());
-            }
-
-        }
-
-        return allowed;
-    }
-
-    private ArrayList<String> getCancelableItems(){
-
-        ArrayList<String> allowed = new ArrayList<>();
+        ArrayList<RentalBooking.ItemStatus> list = new ArrayList<>();
 
         for(RentalBooking.ItemStatus item : itemsList){
 
             if(item.getStatus().equals("Booked")){
-                allowed.add(item.getItemNo());
+                list.add(item);
             }
-
         }
 
-        return allowed;
+        return list;
     }
+
+    private ArrayList<RentalBooking.ItemStatus> getReturnItems(){
+
+        ArrayList<RentalBooking.ItemStatus> list = new ArrayList<>();
+
+        for(RentalBooking.ItemStatus item : itemsList){
+
+            if(item.getStatus().equals("PickedUp")){
+                list.add(item);
+            }
+        }
+
+        return list;
+    }
+
+    private ArrayList<RentalBooking.ItemStatus> getCancelableItems(){
+
+        ArrayList<RentalBooking.ItemStatus> list = new ArrayList<>();
+
+        for(RentalBooking.ItemStatus item : itemsList){
+
+            if(item.getStatus().equals("Booked")){
+                list.add(item);
+            }
+        }
+
+        return list;
+    }
+
+
 
     private ArrayList<String> extractItemCodes(ArrayList<RentalBooking.ItemStatus> items){
 
@@ -293,9 +318,17 @@ public class ReturnDetailActivity extends AppCompatActivity {
         return codes;
     }
 
-    private void openItemSelectionDialog(
+    private void showItemActionDialog(
             String title,
-            ArrayList<RentalBooking.ItemStatus> items){
+            String action,
+            ArrayList<RentalBooking.ItemStatus> items,
+            double suggestedAmount
+    ){
+
+        if(items.isEmpty()){
+            Toast.makeText(this,"No items available for this action",Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         String[] itemNames = new String[items.size()];
         boolean[] checked = new boolean[items.size()];
@@ -304,62 +337,149 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
             RentalBooking.ItemStatus item = items.get(i);
 
-            itemNames[i] =
-                    item.getItemNo() + "  (" + item.getStatus() + ")";
+            itemNames[i] = item.getItemNo() + " (" + item.getStatus() + ")";
 
             checked[i] = false;
         }
 
-        AlertDialog.Builder builder =
-                new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialogue_return_item,null);
 
-        builder.setTitle(title);
+        ListView listView = view.findViewById(R.id.listItems);
+        EditText amountInput = view.findViewById(R.id.etRefund);
 
-        builder.setMultiChoiceItems(
-                itemNames,
-                checked,
-                (dialog,which,isChecked)->{
-                    checked[which] = isChecked;
-                });
+        amountInput.setText(String.valueOf(suggestedAmount));
 
-        builder.setPositiveButton("Confirm",(dialog,which)->{
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<>(this,
+                        android.R.layout.simple_list_item_multiple_choice,
+                        itemNames);
 
-            ArrayList<String> selectedItems = new ArrayList<>();
+        listView.setAdapter(adapter);
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+        listView.post(() -> {
 
             for(int i=0;i<items.size();i++){
 
-                if(checked[i]){
+                String status = items.get(i).getStatus();
 
-                    String status = items.get(i).getStatus();
+                boolean disable = false;
 
-                    if(status.equals("Returned")){
+                if(action.equals("pickup") && status.equals("PickedUp")){
+                    disable = true;
+                }
+                else if(action.equals("return") && status.equals("Returned")){
+                    disable = true;
+                }
+                else if(action.equals("cancel") && status.equals("Cancelled")){
+                    disable = true;
+                }
 
-                        Toast.makeText(this,
-                                items.get(i).getItemNo()+" already returned",
-                                Toast.LENGTH_SHORT).show();
+                if(disable){
 
-                        continue;
+                    listView.setItemChecked(i,false);
+
+                    View itemView = listView.getChildAt(i);
+
+                    if(itemView != null){
+                        itemView.setEnabled(false);
+                        itemView.setAlpha(0.4f);
                     }
-
-                    selectedItems.add(items.get(i).getItemNo());
                 }
             }
 
-            if(selectedItems.isEmpty()){
-                Toast.makeText(this,
-                        "Select at least one item",
-                        Toast.LENGTH_SHORT).show();
-                return;
+        });
+
+        listView.setOnItemClickListener((parent, view1, position, id) -> {
+
+            String status = items.get(position).getStatus();
+
+            if(action.equals("pickup") && status.equals("PickedUp")){
+                listView.setItemChecked(position,false);
+                Toast.makeText(this,"Already picked up",Toast.LENGTH_SHORT).show();
             }
 
-            markItemAsReturned(orderId, selectedItems);
+            if(action.equals("return") && status.equals("Returned")){
+                listView.setItemChecked(position,false);
+                Toast.makeText(this,"Already returned",Toast.LENGTH_SHORT).show();
+            }
+
+            if(action.equals("cancel") && status.equals("Cancelled")){
+                listView.setItemChecked(position,false);
+                Toast.makeText(this,"Already cancelled",Toast.LENGTH_SHORT).show();
+            }
 
         });
 
-        builder.setNegativeButton("Cancel",null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setView(view)
+                .setPositiveButton("Confirm",null)
+                .setNegativeButton("Cancel",null)
+                .create();
 
-        builder.show();
+        dialog.setOnShowListener(d -> {
+
+            Button confirm = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+
+            confirm.setOnClickListener(v -> {
+
+                ArrayList<String> selectedItems = new ArrayList<>();
+
+                for(int i=0;i<items.size();i++){
+
+                    if(listView.isItemChecked(i)){
+
+                        String status = items.get(i).getStatus();
+
+                        if(action.equals("pickup") && status.equals("PickedUp")){
+                            Toast.makeText(this,"Already picked up",Toast.LENGTH_SHORT).show();
+                            continue;
+                        }
+
+                        if(action.equals("return") && status.equals("Returned")){
+                            Toast.makeText(this,"Already returned",Toast.LENGTH_SHORT).show();
+                            continue;
+                        }
+
+                        if(action.equals("cancel") && status.equals("Cancelled")){
+                            Toast.makeText(this,"Already cancelled",Toast.LENGTH_SHORT).show();
+                            continue;
+                        }
+
+                        selectedItems.add(items.get(i).getItemNo());
+                    }
+                }
+
+                if(selectedItems.isEmpty()){
+                    Toast.makeText(this,"Select at least one item",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                double amount =
+                        amountInput.getText().toString().isEmpty()
+                                ? 0
+                                : Double.parseDouble(amountInput.getText().toString());
+
+                if(action.equals("pickup")){
+                    markAsPickedUp(orderId,selectedItems,amount);
+                }
+                else if(action.equals("return")){
+                    markItemAsReturned(orderId,selectedItems);
+                }
+                else if(action.equals("cancel")){
+                    cancelBookingWithRefund(orderId,selectedItems,amount);
+                }
+
+                dialog.dismiss();
+            });
+
+        });
+
+        dialog.show();
     }
+
+
 
     private void markItemAsReturned(String orderId,List<String> items){
 
@@ -387,6 +507,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
                 response->{
 
                     Toast.makeText(this,"Items Returned",Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent();
+                    intent.putExtra("refresh", true);
+                    setResult(RESULT_OK, intent);
                     finish();
 
                 },
@@ -433,6 +556,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
                             "Items Picked Up",
                             Toast.LENGTH_SHORT).show();
 
+                    Intent intent = new Intent();
+                    intent.putExtra("refresh", true);
+                    setResult(RESULT_OK, intent);
                     finish();
 
                 },
@@ -514,6 +640,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
                             "Items Cancelled",
                             Toast.LENGTH_SHORT).show();
 
+                    Intent intent = new Intent();
+                    intent.putExtra("refresh", true);
+                    setResult(RESULT_OK, intent);
                     finish();
 
                 },
@@ -523,78 +652,6 @@ public class ReturnDetailActivity extends AppCompatActivity {
         Volley.newRequestQueue(this).add(request);
     }
 
-    private void showCancelDialog(String orderId,
-                                  ArrayList<String> itemsList,
-                                  double deposit,
-                                  double rentPaid){
-
-        View view = getLayoutInflater()
-                .inflate(R.layout.dialog_cancel_items,null);
-
-        ListView listView = view.findViewById(R.id.listCancelItems);
-        EditText refundInput = view.findViewById(R.id.etCancelRefund);
-
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_list_item_multiple_choice,
-                        itemsList
-                );
-
-        listView.setAdapter(adapter);
-        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-
-        double suggestedRefund = deposit + rentPaid;
-
-        refundInput.setText(String.valueOf(suggestedRefund));
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Cancel Items")
-                .setView(view)
-                .setPositiveButton("Confirm",null)
-                .setNegativeButton("Close",null)
-                .create();
-
-        dialog.setOnShowListener(d -> {
-
-            Button confirm = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-
-            confirm.setOnClickListener(v -> {
-
-                ArrayList<String> selectedItems = new ArrayList<>();
-
-                for(int i=0;i<itemsList.size();i++){
-
-                    if(listView.isItemChecked(i)){
-                        selectedItems.add(itemsList.get(i));
-                    }
-
-                }
-
-                if(selectedItems.isEmpty()){
-
-                    Toast.makeText(this,
-                            "Select at least one item",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-
-                }
-
-                double refund =
-                        refundInput.getText().toString().isEmpty()
-                                ? 0
-                                : Double.parseDouble(refundInput.getText().toString());
-
-                cancelBookingWithRefund(orderId, selectedItems, refund);
-
-                dialog.dismiss();
-
-            });
-
-        });
-
-        dialog.show();
-    }
 
     private void renderItemTimeline(ArrayList<String> items,
                                     long pickupMs,
@@ -629,83 +686,6 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
             layoutItemTimeline.addView(row);
         }
-    }
-    private void showPickupDialog(String orderId,
-                                  ArrayList<String> itemsList,
-                                  double totalRent,
-                                  double rentPaid){
-
-        View view = getLayoutInflater()
-                .inflate(R.layout.dialogue_return_item, null);
-
-        ListView listView = view.findViewById(R.id.listItems);
-        EditText paidInput = view.findViewById(R.id.etRefund);
-        double remainingRent = totalRent - rentPaid;
-
-        if(remainingRent > 0){
-            paidInput.setText(String.valueOf(remainingRent));
-        }else{
-            paidInput.setText("0");
-        }
-
-        paidInput.setHint("Rent to collect");
-
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_list_item_multiple_choice,
-                        itemsList
-                );
-
-        listView.setAdapter(adapter);
-        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Pick Up Items")
-                .setView(view)
-                .setPositiveButton("Confirm", null)
-                .setNegativeButton("Cancel", null)
-                .create();
-
-        dialog.setOnShowListener(d -> {
-
-            Button confirmBtn =
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-
-            confirmBtn.setOnClickListener(v -> {
-
-                ArrayList<String> selectedItems = new ArrayList<>();
-
-                for(int i=0;i<itemsList.size();i++){
-
-                    if(listView.isItemChecked(i)){
-                        selectedItems.add(itemsList.get(i));
-                    }
-
-                }
-
-                if(selectedItems.isEmpty()){
-                    Toast.makeText(this,
-                            "Select at least one item",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                double paidNow =
-                        paidInput.getText().toString().isEmpty()
-                                ? 0
-                                : Double.parseDouble(
-                                paidInput.getText().toString()
-                        );
-
-                markAsPickedUp(orderId, selectedItems, paidNow);
-
-                dialog.dismiss();
-            });
-
-        });
-
-        dialog.show();
     }
 
 }

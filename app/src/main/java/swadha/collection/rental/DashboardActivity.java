@@ -2,6 +2,7 @@ package swadha.collection.rental;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -237,20 +238,27 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Just call refreshDashboard - it handles both cache and network
-        refreshDashboard();
-    }
 
-    private void refreshDashboard() {
-        // 1. Try to load from cache (if we just cleared it, this will be empty)
-        loadFromCache();
+        loadFromCache();   // instant
 
-        // 2. Immediately fetch fresh data from Google Sheets
-        fetchData();
+        new Handler().postDelayed(() -> {
+            fetchData();   // background refresh
+        }, 1500);
     }
 
 
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 100 && resultCode == RESULT_OK) {
+            loadFromCache();
+            fetchData();
+        }
+    }
 
     private void loadDailyStats() {
         // 1. Stop any current scrolling
