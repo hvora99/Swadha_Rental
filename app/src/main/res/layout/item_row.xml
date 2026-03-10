@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingBottom="20dp">
+
+        <View
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:background="#800020" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="🔒"
+            android:textSize="15dp" />
+
+        <TextView
+            android:id="@+id/tvCircleItemNo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_balance_badge"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:text="CH01"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvRowItemName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="sans-serif-black"
+            android:gravity="center"
+            android:text="Premium Suit"
+            android:textAllCaps="true"
+            android:textColor="#1A1C1E"
+            android:textSize="15sp" />
+
+        <View
+            android:layout_width="30dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:background="#E0E0E0" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.5"
+            android:letterSpacing="0.1"
+            android:text="RENT"
+            android:textColor="#000000"
+            android:textSize="9sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvRowRent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="₹3,000"
+            android:textColor="#2E7D32"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvRowDeposit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            android:background="#FDF2F2"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:text="DEPOSIT ₹500"
+            android:textColor="#800020"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

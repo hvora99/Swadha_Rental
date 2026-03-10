@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <View
+        android:id="@+id/titleBarBackground"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:background="#0A0A0A"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvAppName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:letterSpacing="0.3"
+        android:text="CREATE RESERVATION"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/titleBarBackground"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/titleBarBackground" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/titleBarBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="100dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="24dp">
+
+                <TextView
+                    android:id="@+id/lblItem"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Which item?"
+                    android:textColor="#1A1C1E"
+                    android:textSize="24sp"
+                    android:fontFamily="sans-serif-light" />
+
+                <LinearLayout
+                    android:id="@+id/layoutSelectedItems"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/lblItem"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_minimal_line"
+                    android:padding="10dp"/>
+
+            </RelativeLayout>
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="2dp"
+                android:layout_marginStart="24dp"
+                android:background="#800020" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Timeline"
+                    android:textColor="#8E8E93"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.2"/>
+                <CheckBox
+                    android:id="@+id/cbRequiresWash"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Requires Washing ?"
+                    android:textColor="#1A1C1E"/>
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:columnCount="2"
+                    android:alignmentMode="alignMargins">
+
+                    <Button
+                        android:id="@+id/btnPickDate"
+                        android:layout_columnWeight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="Pickup"
+                        android:backgroundTint="#F8F9FA"
+                        android:textColor="#1A1C1E"
+                        app:cornerRadius="14dp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                    <Button
+                        android:id="@+id/btnPickTime"
+                        android:layout_columnWeight="0.6"
+                        android:text="Time"
+                        android:backgroundTint="#F8F9FA"
+                        android:textColor="#1A1C1E"
+                        app:cornerRadius="14dp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                    <Button
+                        android:id="@+id/btnReturnDate"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="Return"
+                        android:backgroundTint="#F8F9FA"
+                        android:textColor="#1A1C1E"
+                        app:cornerRadius="14dp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                    <Button
+                        android:id="@+id/btnReturnTime"
+                        android:layout_columnWeight="0.6"
+                        android:layout_marginTop="8dp"
+                        android:text="Time"
+                        android:backgroundTint="#F8F9FA"
+                        android:textColor="#1A1C1E"
+                        app:cornerRadius="14dp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                    <Button
+                        android:id="@+id/btnWashDate"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="Wash Until"
+                        android:backgroundTint="#FFF3E0"
+                        android:textColor="#1A1C1E"
+                        app:cornerRadius="14dp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                    <Button
+                        android:id="@+id/btnWashTime"
+                        android:layout_columnWeight="0.6"
+                        android:layout_marginTop="8dp"
+                        android:text="Time"
+                        android:backgroundTint="#FFF3E0"
+                        android:textColor="#1A1C1E"
+                        app:cornerRadius="14dp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+                </GridLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FDFDFD"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <EditText
+                    android:id="@+id/etCustomerName"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:background="@drawable/bg_minimal_line"
+                    android:hint="Client Name"
+                    android:paddingHorizontal="20dp" />
+
+                <EditText
+                    android:id="@+id/etPhone"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_minimal_line"
+                    android:hint="Mobile Contact"
+                    android:inputType="phone"
+                    android:paddingHorizontal="20dp" />
+                <!-- RENT INFORMATION (READ ONLY) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rental Information"
+                    android:textStyle="bold"
+                    android:textColor="#8E8E93"
+                    android:textSize="11sp"
+                    android:layout_marginTop="16dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <!-- TOTAL RENT COLUMN -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Booking Rent"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#8E8E93"
+                            android:layout_marginBottom="4dp"/>
+
+                        <EditText
+                            android:id="@+id/etTotalRent"
+                            android:layout_width="match_parent"
+                            android:layout_height="55dp"
+                            android:background="@drawable/bg_minimal_line"
+                            android:inputType="number"
+                            android:textColor="#000000"
+                            android:paddingHorizontal="20dp"/>
+                    </LinearLayout>
+
+                    <!-- SUGGESTED DEPOSIT COLUMN -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginStart="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Suggested Deposit"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#8E8E93"
+                            android:layout_marginBottom="4dp"/>
+
+                        <EditText
+                            android:id="@+id/etSuggestedDeposit"
+                            android:layout_width="match_parent"
+                            android:layout_height="55dp"
+                            android:background="@drawable/bg_minimal_line"
+                            android:enabled="false"
+                            android:focusable="false"
+                            android:textColor="#000000"
+                            android:paddingHorizontal="20dp"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+                <!-- PAYMENT COLLECTED NOW -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Payment Collected Now"
+                    android:textStyle="bold"
+                    android:textColor="#8E8E93"
+                    android:textSize="11sp"
+                    android:layout_marginTop="20dp"/>
+
+                <EditText
+                    android:id="@+id/etDepositCollected"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:background="@drawable/bg_minimal_line"
+                    android:hint="Deposit Collected ?"
+                    android:inputType="number"
+                    android:paddingHorizontal="20dp"
+                    android:layout_marginTop="8dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Is Rent Collected?"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#8E8E93"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="4dp"/>
+                <EditText
+                    android:id="@+id/etRentPaidNow"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:background="@drawable/bg_minimal_line"
+                    android:hint="Rent Paid Now (Optional)"
+                    android:inputType="number"
+                    android:paddingHorizontal="20dp"
+                  />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaveBooking"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:layout_margin="24dp"
+        android:text="Confirm Reservation"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:letterSpacing="0.1"
+        android:backgroundTint="#0A0A0A"
+        app:cornerRadius="20dp"
+        app:elevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

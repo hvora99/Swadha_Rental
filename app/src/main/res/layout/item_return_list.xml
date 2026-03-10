@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="3dp"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:paddingBottom="20dp">
+
+        <View
+            android:id="@+id/brandAccent"
+            android:layout_width="5dp"
+            android:layout_height="0dp"
+            android:background="#800020"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvItemCircle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_balance_badge"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="2dp"
+            android:text="KT01"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/brandAccent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/balanceGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:gravity="end"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvItemCircle">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.1"
+                android:text="DUE"
+                android:textColor="#8E8E93"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvRowBalance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₹1500"
+                android:textColor="#D32F2F"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvRowCustomerName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="12dp"
+            android:fontFamily="sans-serif-black"
+            android:text="Hardik"
+            android:textColor="#1A1C1E"
+            android:textSize="22sp"
+            app:layout_constraintEnd_toStartOf="@+id/balanceGroup"
+            app:layout_constraintStart_toStartOf="@id/tvItemCircle"
+            app:layout_constraintTop_toBottomOf="@id/tvItemCircle" />
+
+        <LinearLayout
+            android:id="@+id/timelineHub"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="@id/balanceGroup"
+            app:layout_constraintStart_toStartOf="@id/tvRowCustomerName"
+            app:layout_constraintTop_toBottomOf="@id/tvRowCustomerName">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PICKUP"
+                    android:textColor="#BDBDBD"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvRowPickupDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="18 Feb 2026"
+                    android:textColor="#1A1C1E"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvRowPickupTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10:00 AM"
+                    android:textColor="#9E9E9E"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginHorizontal="12dp"
+                android:alpha="0.2"
+                android:src="@drawable/ic_arrow_forward"
+                app:tint="#000000" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="RETURN"
+                    android:textColor="#800020"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvRowReturnDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="21 Feb 2026"
+                    android:textColor="#800020"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvRowReturnTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="06:30 PM"
+                    android:textColor="#9E9E9E"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>
