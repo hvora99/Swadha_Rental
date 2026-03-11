@@ -3,6 +3,7 @@ package swadha.collection.rental;
 import android.content.Intent;
 
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -143,7 +144,30 @@ public class ReturnDetailActivity extends AppCompatActivity {
         tvDeposit.setText("₹ " + String.format("%.2f", deposit));
 
         tvStatus.setText("Status: " + status);
+        tvStatus.setText(status.toUpperCase());
+        GradientDrawable bg =
+                (GradientDrawable) tvStatus.getBackground().mutate();
 
+        int color;
+
+        if(status.equalsIgnoreCase("Booked")){
+            color = Color.parseColor("#FB8C00");
+            tvStatus.setText("📝 BOOKED");
+        }
+        else if(status.equalsIgnoreCase("PickedUp")){
+            color = Color.parseColor("#1976D2");
+            tvStatus.setText("🚚 PICKED UP");
+        }
+        else if(status.equalsIgnoreCase("Returned")){
+            color = Color.parseColor("#2E7D32");
+            tvStatus.setText("✔ RETURNED");
+        }
+        else{
+            color = Color.parseColor("#9E9E9E");
+            tvStatus.setText(status.toUpperCase());
+        }
+
+        bg.setStroke(2, color);
 
         double rentDue = totalRent - rentPaid;
 

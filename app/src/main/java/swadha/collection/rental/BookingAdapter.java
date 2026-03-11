@@ -123,26 +123,18 @@
             // -------------------
             // Emergency textbox
             // -------------------
-
             long now = System.currentTimeMillis();
 
-            long pickupDiff = pickupMs - now;
-            long returnDiff = returnMs - now;
-
-            long pickupHours = pickupDiff / (1000 * 60 * 60);
-            long returnHours = returnDiff / (1000 * 60 * 60);
-
-            // -------------------
-            // PICKUP ALERT
-            // -------------------
+            holder.tvReturnUrgency.setText("");
 
             if(status.equalsIgnoreCase("Booked")){
 
-                if(pickupDiff < 0){
+                long diff = now - pickupMs;
+                long hrs = diff / (1000 * 60 * 60);
 
-                    long overdue = Math.abs(pickupHours);
+                if(diff > 0){
 
-                    holder.tvReturnUrgency.setText("⚠ Pickup overdue by " + overdue + "h");
+                    holder.tvReturnUrgency.setText("⚠ Pickup overdue " + hrs + "h");
                     holder.tvReturnUrgency.setTextColor(Color.parseColor("#B71C1C"));
 
                 }
@@ -154,77 +146,44 @@
 
             }
 
-            // -------------------
-            // PICKED UP INFO
-            // -------------------
-
             else if(status.equalsIgnoreCase("PickedUp")){
 
                 if(actualPickupMs > 0){
 
-                    long diff = now - actualPickupMs;
-                    long hrs = diff / (1000 * 60 * 60);
+                    long diffPickup = now - actualPickupMs;
+                    long hrsPickup = Math.max(1, diffPickup / (1000 * 60 * 60));
 
-                    if(hrs <= 2){
+                    if(isToday(new Date(actualPickupMs))){
 
-                        holder.tvReturnUrgency.setText("✓ Picked up " + hrs + "h ago");
+                        holder.tvReturnUrgency.setText("✓ Picked up " + hrsPickup + "h ago");
                         holder.tvReturnUrgency.setTextColor(Color.parseColor("#2E7D32"));
 
                     }
 
                 }
 
-            }
+                long diffReturn = returnMs - now;
+                long hrsReturn = diffReturn / (1000 * 60 * 60);
 
-            // -------------------
-            // RETURN ALERT
-            // -------------------
+                if(diffReturn < 0){
 
-            if(returnDiff < 0){
+                    holder.tvReturnUrgency.setText("⚠ Overdue " + Math.abs(hrsReturn) + "h");
+                    holder.tvReturnUrgency.setTextColor(Color.parseColor("#B71C1C"));
 
-                long overdue = Math.abs(returnHours);
-
-                holder.tvReturnUrgency.setText("⚠ Overdue by " + overdue + "h");
-                holder.tvReturnUrgency.setTextColor(Color.parseColor("#B71C1C"));
-
-            }
-            else if(returnHours <= 3){
-
-                holder.tvReturnUrgency.setText("⚠ Return in " + returnHours + "h");
-                holder.tvReturnUrgency.setTextColor(Color.parseColor("#D32F2F"));
-
-            }
-            else if(returnToday){
-
-                holder.tvReturnUrgency.setText("Return Today");
-                holder.tvReturnUrgency.setTextColor(Color.parseColor("#FB8C00"));
-
-            }
-            ////////////////////////////////////////
-
-            try {
-
-                if (pickupDate == null || returnDate == null) {
-
-                    holder.tvPickupDate.setText("Pickup: -");
-                    holder.tvPickupTime.setText("-");
-
-                    holder.tvReturnDate.setText("Return: -");
-                    holder.tvReturnTime.setText("-");
-
-                } else {
-
-                    holder.tvPickupDate.setText("Pickup: " + dateFormat.format(pickupDate));
-                    holder.tvPickupTime.setText(timeFormat.format(pickupDate));
-
-                    holder.tvReturnDate.setText("Return: " + dateFormat.format(returnDate));
-                    holder.tvReturnTime.setText(timeFormat.format(returnDate));
                 }
+                else if(hrsReturn <= 3){
 
-            } catch (Exception e) {
-                e.printStackTrace();
+                    holder.tvReturnUrgency.setText("⚠ Return in " + hrsReturn + "h");
+                    holder.tvReturnUrgency.setTextColor(Color.parseColor("#D32F2F"));
+
+                }
+                else if(isToday(new Date(returnMs))){
+
+                    holder.tvReturnUrgency.setText("Return Today");
+                    holder.tvReturnUrgency.setTextColor(Color.parseColor("#FB8C00"));
+
+                }
             }
-
 
             // 2. Handle Regular Click (Open Detail Activity)
             holder.itemView.setOnClickListener(v -> {

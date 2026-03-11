@@ -16,7 +16,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
-        android:background="@drawable/bg_balance_badge"
+        android:background="@drawable/bg_status_glass"
         android:paddingHorizontal="16dp"
         android:paddingVertical="4dp"
         android:text="BOOKED"
