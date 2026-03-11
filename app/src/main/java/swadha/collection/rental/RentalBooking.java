@@ -130,8 +130,8 @@ public class RentalBooking {
         return items;
     }
 
-    public void addItem(String itemNo, String status){
-        items.add(new ItemStatus(itemNo, status));
+    public void addItem(String itemNo, String status, double rent, double deposit){
+        items.add(new ItemStatus(itemNo, status, rent, deposit));
     }
 
     public long getWashMs() { return washMs; }
@@ -151,10 +151,14 @@ public class RentalBooking {
 
         private String itemNo;
         private String status;
+        private double rent;
+        private double deposit;
 
-        public ItemStatus(String itemNo, String status){
+        public ItemStatus(String itemNo, String status, double rent, double deposit){
             this.itemNo = itemNo;
             this.status = status;
+            this.rent = rent;
+            this.deposit = deposit;
         }
 
         public String getItemNo(){
@@ -163,6 +167,14 @@ public class RentalBooking {
 
         public String getStatus(){
             return status;
+        }
+
+        public double getRent(){
+            return rent;
+        }
+
+        public double getDeposit(){
+            return deposit;
         }
     }
 

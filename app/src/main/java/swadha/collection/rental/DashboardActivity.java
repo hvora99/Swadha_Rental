@@ -347,7 +347,9 @@ public class DashboardActivity extends AppCompatActivity {
 
                         booking.addItem(
                                 item.getString("itemNo"),
-                                item.getString("status")
+                                item.getString("status"),
+                                item.optDouble("rent",0),
+                                item.optDouble("deposit",0)
                         );
                     }
                 }

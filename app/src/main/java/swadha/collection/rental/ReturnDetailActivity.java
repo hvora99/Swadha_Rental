@@ -50,7 +50,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
     private LinearLayout layoutItemTimeline;
     private String orderId;
     ArrayList<RentalBooking.ItemStatus> itemsList;
-
+    private double totalRent;
+    private double deposit;
+    private double rentPaid;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,9 +66,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
 
 
-        double totalRent = getIntent().getDoubleExtra("totalRent", 0.0);
-        double deposit = getIntent().getDoubleExtra("deposit", 0.0);
-        double rentPaid = getIntent().getDoubleExtra("rentPaid", 0.0);
+         totalRent = getIntent().getDoubleExtra("totalRent", 0.0);
+         deposit = getIntent().getDoubleExtra("deposit", 0.0);
+         rentPaid = getIntent().getDoubleExtra("rentPaid", 0.0);
         double balance = getIntent().getDoubleExtra("balance", 0.0);
         orderId = getIntent().getStringExtra("orderId");
         String items = getIntent().getStringExtra("items");
@@ -350,6 +352,8 @@ public class ReturnDetailActivity extends AppCompatActivity {
             double suggestedAmount
     ){
 
+
+
         if(items.isEmpty()){
             Toast.makeText(this,"No items available for this action",Toast.LENGTH_SHORT).show();
             return;
@@ -383,8 +387,22 @@ public class ReturnDetailActivity extends AppCompatActivity {
         ListView listView = view.findViewById(R.id.listItems);
         EditText amountInput = view.findViewById(R.id.etRefund);
 
-        amountInput.setText(String.valueOf(suggestedAmount));
 
+        if(action.equals("pickup")){
+            amountInput.setText(String.valueOf(totalRent - rentPaid));
+            amountInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+
+        }
+        else if(action.equals("return")){
+            amountInput.setText(String.valueOf(deposit));
+            amountInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+
+        }
+        else if(action.equals("cancel")){
+            amountInput.setText(String.valueOf(deposit + rentPaid));
+            amountInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+
+        }
 
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(this,
@@ -434,17 +452,46 @@ public class ReturnDetailActivity extends AppCompatActivity {
             if(action.equals("pickup") && status.equals("PickedUp")){
                 listView.setItemChecked(position,false);
                 Toast.makeText(this,"Already picked up",Toast.LENGTH_SHORT).show();
+                return;
             }
 
             if(action.equals("return") && status.equals("Returned")){
                 listView.setItemChecked(position,false);
                 Toast.makeText(this,"Already returned",Toast.LENGTH_SHORT).show();
+                return;
             }
 
             if(action.equals("cancel") && status.equals("Cancelled")){
                 listView.setItemChecked(position,false);
                 Toast.makeText(this,"Already cancelled",Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            // 🔹 Recalculate amount based on selected items
+            double amount = 0;
+
+            for(int i=0;i<items.size();i++){
+
+                if(listView.isItemChecked(i)){
+
+                    RentalBooking.ItemStatus item = items.get(i);
+
+                    if(action.equals("pickup")){
+                        amount += item.getRent();
+                    }
+
+                    if(action.equals("return")){
+                        amount += item.getDeposit();
+                    }
+
+                    if(action.equals("cancel")){
+                        amount += item.getRent() + item.getDeposit();
+                    }
+                }
+            }
+
+            amountInput.setText(String.valueOf((int)amount));
+            amountInput.setSelection(amountInput.getText().length());
 
         });
 
@@ -499,14 +546,30 @@ public class ReturnDetailActivity extends AppCompatActivity {
                                 : Double.parseDouble(amountInput.getText().toString());
 
                 if(action.equals("pickup")){
+
+                    double remaining = totalRent - rentPaid;
+
+                    if(amount > remaining){
+
+                        Toast.makeText(this,
+                                "Cannot collect more than remaining rent",
+                                Toast.LENGTH_SHORT).show();
+
+                        return;
+                    }
+                }
+
+                if(action.equals("pickup")){
                     markAsPickedUp(orderId,selectedItems,amount);
                 }
                 else if(action.equals("return")){
-                    markItemAsReturned(orderId,selectedItems);
+                    markItemAsReturned(orderId,selectedItems,amount);
                 }
                 else if(action.equals("cancel")){
                     cancelBookingWithRefund(orderId,selectedItems,amount);
                 }
+
+                dialog.dismiss();
 
                 dialog.dismiss();
             });
@@ -515,58 +578,6 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
         dialog.show();
     }
-
-
-
-    private void markItemAsReturned(String orderId,List<String> items){
-
-        JSONObject params = new JSONObject();
-
-        try{
-
-            params.put("action","markReceived");
-            params.put("orderId",orderId);
-
-            JSONArray arr = new JSONArray();
-
-            for(String item:items){
-                arr.put(item);
-            }
-
-            params.put("items",arr);
-
-        }catch(Exception e){}
-
-        JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.POST,
-                webAppUrl,
-                params,
-                response->{
-
-                    Toast.makeText(this,"Items Returned",Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent();
-                    intent.putExtra("refresh", true);
-                    setResult(RESULT_OK, intent);
-                    finish();
-
-                },
-                error->Log.e("API_ERROR",error.toString())
-        );
-
-        Volley.newRequestQueue(this).add(request);
-    }
-
-
-    private void setButtonState(MaterialButton button, boolean enabled) {
-        button.setEnabled(enabled);
-
-        if (enabled) {
-            button.setAlpha(1f);
-        } else {
-            button.setAlpha(0.4f);   // dark faded look
-        }
-    }
-
 
     private void markAsPickedUp(String orderId,
                                 ArrayList<String> items,
@@ -604,6 +615,97 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
         Volley.newRequestQueue(this).add(request);
     }
+
+    private void cancelBookingWithRefund(String orderId,
+                                         ArrayList<String> items,
+                                         double refundAmount){
+
+        JSONObject params = new JSONObject();
+
+        try {
+
+            params.put("action","cancelBooking");
+            params.put("orderId",orderId);
+            params.put("items",new JSONArray(items));
+            params.put("refundAmount",refundAmount);
+
+        } catch (Exception ignored){}
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                webAppUrl,
+                params,
+                response -> {
+
+                    Toast.makeText(this,
+                            "Items Cancelled",
+                            Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent();
+                    intent.putExtra("refresh", true);
+                    setResult(RESULT_OK, intent);
+                    finish();
+
+                },
+                error -> Log.e("API_ERROR",error.toString())
+        );
+
+        Volley.newRequestQueue(this).add(request);
+    }
+
+    private void markItemAsReturned(String orderId,
+                                    List<String> items,
+                                    double refundAmount){
+
+        JSONObject params = new JSONObject();
+
+        try{
+
+            params.put("action","markReceived");
+            params.put("orderId",orderId);
+            params.put("refundAmount",refundAmount);
+
+            JSONArray arr = new JSONArray();
+
+            for(String item:items){
+                arr.put(item);
+            }
+
+            params.put("items",arr);
+
+        }catch(Exception e){}
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                webAppUrl,
+                params,
+                response->{
+
+                    Toast.makeText(this,"Items Returned",Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent();
+                    intent.putExtra("refresh", true);
+                    setResult(RESULT_OK, intent);
+                    finish();
+
+                },
+                error->Log.e("API_ERROR",error.toString())
+        );
+
+        Volley.newRequestQueue(this).add(request);
+    }
+
+
+    private void setButtonState(MaterialButton button, boolean enabled) {
+        button.setEnabled(enabled);
+
+        if (enabled) {
+            button.setAlpha(1f);
+        } else {
+            button.setAlpha(0.4f);   // dark faded look
+        }
+    }
+
 
 
     private void sendToWhatsApp(String phone,
@@ -649,44 +751,6 @@ public class ReturnDetailActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "WhatsApp not installed", Toast.LENGTH_SHORT).show();
         }
-    }
-
-
-    private void cancelBookingWithRefund(String orderId,
-                                         ArrayList<String> items,
-                                         double refundAmount){
-
-        JSONObject params = new JSONObject();
-
-        try {
-
-            params.put("action","cancelBooking");
-            params.put("orderId",orderId);
-            params.put("items",new JSONArray(items));
-            params.put("refundAmount",refundAmount);
-
-        } catch (Exception ignored){}
-
-        JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.POST,
-                webAppUrl,
-                params,
-                response -> {
-
-                    Toast.makeText(this,
-                            "Items Cancelled",
-                            Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent();
-                    intent.putExtra("refresh", true);
-                    setResult(RESULT_OK, intent);
-                    finish();
-
-                },
-                error -> Log.e("API_ERROR",error.toString())
-        );
-
-        Volley.newRequestQueue(this).add(request);
     }
 
 

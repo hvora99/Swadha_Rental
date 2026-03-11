@@ -28,7 +28,6 @@
         android:id="@+id/etRefund"
         android:hint="Enter refund amount"
         android:inputType="number"
-        android:enabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
