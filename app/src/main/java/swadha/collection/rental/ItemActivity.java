@@ -1,5 +1,6 @@
 package swadha.collection.rental;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -168,6 +169,15 @@ public class ItemActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             Log.e("ITEM_ERROR", "Parsing failed", e);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(resultCode == RESULT_OK){
+            fetchItemsFromServer();
         }
     }
 

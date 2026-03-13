@@ -36,39 +36,25 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         holder.tvNo.setText(item.getItemNo());
         holder.tvRent.setText("Rent: ₹" + item.getRent());
         holder.tvDeposit.setText("Dep: ₹" + item.getDeposit());
-        if (item.isLocked()) {
-            holder.itemView.setAlpha(0.5f);
+
+
+        if(item.isLocked()){
+            holder.topBar.setBackgroundColor(Color.parseColor("#D32F2F")); // red
+            holder.tvStatus.setText("LOCKED");
         }
-        if (!item.isAvailable()) {
-            holder.itemView.setAlpha(0.4f);   // faded item
-        } else {
-            holder.itemView.setAlpha(1f);
+        else if("booked".equals(item.getStatus())){
+            holder.topBar.setBackgroundColor(Color.parseColor("#1976D2")); // blue
+            holder.tvStatus.setText("BOOKED");
+        }
+        else if("washing".equals(item.getStatus())){
+            holder.topBar.setBackgroundColor(Color.parseColor("#FB8C00")); // orange
+            holder.tvStatus.setText("WASHING");
+        }
+        else{
+            holder.topBar.setBackgroundColor(Color.parseColor("#2E7D32")); // green
+            holder.tvStatus.setText("AVAILABLE");
         }
 
-
-        if (item.isLocked()) {
-
-            holder.tvStatus.setText("🔒");
-            holder.tvStatus.setTextColor(Color.RED);
-
-        }
-        else if (item.isWashing()) {
-
-            holder.tvStatus.setText("🧼");
-            holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));
-
-        }
-        else if (item.isBooked()) {
-
-            holder.tvStatus.setText("🔴");
-            holder.tvStatus.setTextColor(Color.parseColor("#D32F2F"));
-
-        }
-        else {
-
-            holder.tvStatus.setText("🟢");
-            holder.tvStatus.setTextColor(Color.parseColor("#2E7D32"));
-        }
 
         holder.itemView.setOnClickListener(v -> {
 
@@ -91,7 +77,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvNo, tvRent, tvDeposit,tvStatus;
-
+        View topBar;
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvRowItemName);
@@ -99,6 +85,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             tvRent = itemView.findViewById(R.id.tvRowRent);
             tvDeposit = itemView.findViewById(R.id.tvRowDeposit);
             tvStatus = itemView.findViewById(R.id.tvStatus);
+            topBar = itemView.findViewById(R.id.topBar);
+
         }
     }
 }

@@ -38,6 +38,9 @@ public class ItemModel {
     }
     public boolean isRequiresWash() { return requiresWash; }
     public boolean isLocked() { return isLocked; }
+    public String getStatus() {
+        return status;
+    }
     @Override
     public String toString() {
         return itemNo + " - " + itemName;

@@ -366,8 +366,10 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
             RentalBooking.ItemStatus item = items.get(i);
 
-            itemNames[i] = item.getItemNo() + " (" + item.getStatus() + ")";
-
+            itemNames[i] = item.getItemNo() +
+                    "  ₹" + item.getRent() +
+                    "  Dep ₹" + item.getDeposit() +
+                    " (" + item.getStatus() + ")";
             checked[i] = false;
         }
 

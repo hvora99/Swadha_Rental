@@ -1,11 +1,16 @@
 package swadha.collection.rental;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +36,8 @@ public class ItemDetailActivity extends AppCompatActivity {
     private static final String webAppUrl = "https://script.google.com/macros/s/AKfycby9Bfc8ohJDS6bvWDu1I8E21yxzRg_GQBhpRXkzY9hLfcKrDlqzxYe2LyMl4Vmb6CXj/exec";
     EditText etName, etRent, etDeposit;
     boolean isLocked;
+    private AlertDialog progressDialog;
+    Button btnRemove;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,7 +62,7 @@ public class ItemDetailActivity extends AppCompatActivity {
 
 
         btnToggleLock.setOnClickListener(v -> {
-
+            showLoading();
             JSONObject params = new JSONObject();
             try {
                 params.put("action", "toggleLock");
@@ -78,10 +85,17 @@ public class ItemDetailActivity extends AppCompatActivity {
                                     isLocked ? "Item Locked" : "Item Unlocked",
                                     Toast.LENGTH_SHORT).show();
                         }
+                        hideLoading();
                     },
-                    error -> Toast.makeText(this,
-                            "Lock update failed",
-                            Toast.LENGTH_SHORT).show()
+                    error -> {
+                        Toast.makeText(this,
+                                "Lock update failed",
+                                Toast.LENGTH_SHORT).show();
+                        hideLoading();
+                    }
+
+
+
             );
 
             Volley.newRequestQueue(this).add(request);
@@ -93,7 +107,9 @@ public class ItemDetailActivity extends AppCompatActivity {
         etDeposit.setText(String.valueOf(deposit));
 
         Button btnUpdate = findViewById(R.id.btnUpdateItem);
-        Button btnRemove = findViewById(R.id.btnRemoveItem);
+        btnRemove = findViewById(R.id.btnRemoveItem);
+        btnRemove.setEnabled(false);
+        btnRemove.setAlpha(0.4f);
 
             btnUpdate.setOnClickListener(v -> {
 
@@ -124,7 +140,39 @@ public class ItemDetailActivity extends AppCompatActivity {
         // Next step: load current booking
         loadCurrentBooking();
     }
+    private void showLoading() {
 
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(50,50,50,50);
+        layout.setGravity(Gravity.CENTER);
+
+        ProgressBar bar = new ProgressBar(this);
+        bar.setIndeterminate(true);
+        bar.setPadding(0,0,30,0);
+
+        TextView tv = new TextView(this);
+        tv.setText("Loading...");
+        tv.setTextSize(18);
+        tv.setTextColor(Color.BLACK);
+
+        layout.addView(bar);
+        layout.addView(tv);
+
+        progressDialog = new AlertDialog.Builder(this)
+                .setCancelable(false)
+                .setView(layout)
+                .create();
+
+        progressDialog.show();
+    }
+
+    private void hideLoading() {
+
+        if(progressDialog != null && progressDialog.isShowing()){
+            progressDialog.dismiss();
+        }
+    }
     private void updateLockButtonUI(Button button) {
 
         if (isLocked) {
@@ -141,21 +189,19 @@ public class ItemDetailActivity extends AppCompatActivity {
     }
 
     private void loadCurrentBooking() {
-
         RecyclerView rv = findViewById(R.id.rvCurrentBooking);
         TextView tvNoBooking = findViewById(R.id.tvNoBooking);
-        Button btnRemove = findViewById(R.id.btnRemoveItem);
 
         rv.setLayoutManager(new LinearLayoutManager(this));
 
         String url = webAppUrl + "?mode=currentBooking&itemNo=" + itemNo;
 
+        showLoading();
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.GET,
                 url,
                 null,
                 response -> {
-
                     String status = response.optString("status", "available");
 
                     if ("booked".equals(status)) {
@@ -168,25 +214,28 @@ public class ItemDetailActivity extends AppCompatActivity {
 
                             for (int i = 0; i < bookingArray.length(); i++) {
 
-                                JSONObject obj = bookingArray.optJSONObject(i); // safer
-                                if (obj == null) continue;
+                                JSONObject booking = bookingArray.optJSONObject(i);
+                                if (booking == null) continue;
 
                                 list.add(new CurrentBookingModel(
-                                        obj.optString("name"),
-                                        obj.optString("phone"),
-                                        obj.optString("pickup"),
-                                        obj.optString("return"),
-                                        obj.optString("total"),
-                                        obj.optString("advance"),
-                                        obj.optString("balance")
+                                        booking.optString("name"),
+                                        booking.optString("phone"),
+                                        booking.optString("pickup"),
+                                        booking.optString("return"),
+                                        String.valueOf(booking.optDouble("totalRent")),
+                                        String.valueOf(booking.optDouble("rentPaid")),
+                                        String.valueOf(booking.optDouble("balance"))
                                 ));
                             }
-
+                            Log.d("BOOKINGS_COUNT","Total="+bookingArray.length());
                             rv.setAdapter(new CurrentBookingAdapter(list));
-
+                            expandRecyclerView(rv);
                             rv.setVisibility(View.VISIBLE);
                             tvNoBooking.setVisibility(View.GONE);
                             btnRemove.setEnabled(false);
+                            btnRemove.setAlpha(0.4f);
+                            hideLoading();
+
                         }
 
                     } else {
@@ -194,7 +243,9 @@ public class ItemDetailActivity extends AppCompatActivity {
                         rv.setAdapter(null);
                         rv.setVisibility(View.GONE);
                         tvNoBooking.setVisibility(View.VISIBLE);
-                        btnRemove.setEnabled(true);
+                        btnRemove.setAlpha(1f);
+                        hideLoading();
+
                     }
                 },
                 error -> {
@@ -207,6 +258,7 @@ public class ItemDetailActivity extends AppCompatActivity {
                         }
 
                         Toast.makeText(this, "Error loading booking", Toast.LENGTH_SHORT).show();
+                        hideLoading();
                     }
         );
 
@@ -232,8 +284,16 @@ public class ItemDetailActivity extends AppCompatActivity {
                 response -> {
 
                     if (response.optString("status").equals("success")) {
-                        Toast.makeText(this, "Item Updated", Toast.LENGTH_SHORT).show();
-                    } else {
+                        if (response.optString("status").equals("success")) {
+                            if (response.optString("status").equals("success")) {
+                                if (response.optString("status").equals("success")) {
+                                    Toast.makeText(this, "Item Updated", Toast.LENGTH_SHORT).show();
+                                    setResult(RESULT_OK);
+                                    finish();
+                                }
+                            }                            setResult(RESULT_OK);
+                            finish();
+                        }                    } else {
                         Toast.makeText(this,
                                 response.optString("message"),
                                 Toast.LENGTH_LONG).show();
@@ -245,6 +305,8 @@ public class ItemDetailActivity extends AppCompatActivity {
 
         Volley.newRequestQueue(this).add(request);
     }
+
+
 
     private void deleteItemFromServer(String itemNo) {
 
@@ -286,5 +348,31 @@ public class ItemDetailActivity extends AppCompatActivity {
         Volley.newRequestQueue(this).add(request);
     }
 
+    private void expandRecyclerView(RecyclerView recyclerView){
 
+        RecyclerView.Adapter adapter = recyclerView.getAdapter();
+        if(adapter == null) return;
+
+        int totalHeight = 0;
+
+        for(int i=0;i<adapter.getItemCount();i++){
+
+            RecyclerView.ViewHolder holder =
+                    adapter.createViewHolder(recyclerView, adapter.getItemViewType(i));
+
+            adapter.onBindViewHolder(holder,i);
+
+            holder.itemView.measure(
+                    View.MeasureSpec.makeMeasureSpec(recyclerView.getWidth(), View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.UNSPECIFIED
+            );
+
+            totalHeight += holder.itemView.getMeasuredHeight();
+        }
+
+        ViewGroup.LayoutParams params = recyclerView.getLayoutParams();
+        params.height = totalHeight + (adapter.getItemCount() * 20);
+
+        recyclerView.setLayoutParams(params);
+    }
 }
