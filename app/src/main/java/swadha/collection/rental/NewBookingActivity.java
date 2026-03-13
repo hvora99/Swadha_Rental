@@ -3,6 +3,7 @@ package swadha.collection.rental;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog; // Added for Time
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -48,9 +49,8 @@ import java.util.Locale;
 
 public class NewBookingActivity extends AppCompatActivity {
 
-    private EditText etItemNumber, etCustomerName, etPhone, etTotalRent, etAdvance,etdeposit,SuggestedDeposit,RentPaidNow;
+    private EditText  etCustomerName, etPhone, etTotalRent,etdeposit,SuggestedDeposit,RentPaidNow;
     private Button btnSaveBooking, btnPickDate, btnReturnDate, btnPickTime, btnReturnTime,btnWashDate,btnWashTime;
-    private long lastFetchTime = 0;
     private String selectedPickupDate = "";
     private String selectedReturnDate = "";
     private String selectedPickupTime = ""; // New variable
@@ -86,7 +86,6 @@ public class NewBookingActivity extends AppCompatActivity {
         etCustomerName = findViewById(R.id.etCustomerName);
         etPhone = findViewById(R.id.etPhone);
         etTotalRent = findViewById(R.id.etTotalRent);
-        etAdvance = findViewById(R.id.etRentPaidNow);
         etdeposit = findViewById(R.id.etDepositCollected);
         btnPickDate = findViewById(R.id.btnPickDate);
         btnReturnDate = findViewById(R.id.btnReturnDate);
@@ -100,6 +99,9 @@ public class NewBookingActivity extends AppCompatActivity {
         btnSearchItems = findViewById(R.id.btnSearchItems);
         layoutSelectedItems = findViewById(R.id.layoutSelectedItems);
 
+        setupCurrencyFormatter(etTotalRent);
+        setupCurrencyFormatter(etdeposit);
+        setupCurrencyFormatter(RentPaidNow);
 
        // fetchAvailableItems();
 
@@ -123,7 +125,10 @@ public class NewBookingActivity extends AppCompatActivity {
         btnWashDate.setOnClickListener(v -> showDatePicker(TYPE_WASH));
         btnWashTime.setOnClickListener(v -> showTimePicker(TYPE_WASH));
 
-        btnSaveBooking.setOnClickListener(v -> saveDataToSheet());
+        btnSaveBooking.setOnClickListener(v -> {
+
+            saveDataToSheet();
+        });
 
         btnSaveBooking.setEnabled(false); // Disable by default
         btnSaveBooking.setBackgroundColor(Color.GRAY);
@@ -259,6 +264,13 @@ public class NewBookingActivity extends AppCompatActivity {
         searchBar.setHint("Type to search (e.g. CH01)...");
         layout.addView(searchBar);
 
+        TextView suggestTitle = new TextView(this);
+        suggestTitle.setText("Suggested Available Items");
+        suggestTitle.setTextSize(16);
+        suggestTitle.setTypeface(null, Typeface.BOLD);
+        suggestTitle.setPadding(0,20,0,10);
+        layout.addView(suggestTitle);
+
         ListView listView = new ListView(this);
         layout.addView(listView);
 
@@ -284,38 +296,49 @@ public class NewBookingActivity extends AppCompatActivity {
                         title.setText(item.getItemNo() + " - " + item.getItemName());
 
                         if(item.getNextAvailableMs() > System.currentTimeMillis()){
-
                             status.setText("Booked till " +
                                     new SimpleDateFormat("dd MMM HH:mm", Locale.getDefault())
                                             .format(new Date(item.getNextAvailableMs())));
-
                             status.setTextColor(Color.RED);
                             check.setChecked(false);
                             check.setEnabled(false);
-
-                        }// 🔒 LOCKED
-                        if(item.isLocked()){
-
-                            status.setText("🔒 Locked");
-                            status.setTextColor(Color.parseColor("#616161"));
-                            check.setEnabled(false);
-                            check.setChecked(false);
-
-                        // 🧼 WASHING
-                        }else if(item.isWashing()){
-
-                            status.setText("🧼 Washing");
-                            status.setTextColor(Color.parseColor("#2196F3"));
-                            check.setEnabled(false);
-                            check.setChecked(false);
-
-                        // 🔴 BOOKED
                         }
-                        else{
+                        // 🔒 LOCKED
+                        String statusValue = item.getStatus();
 
-                            status.setText("Available");
-                            status.setTextColor(Color.parseColor("#2E7D32"));
-                            check.setEnabled(true);
+                        switch (statusValue){
+
+                            case "locked":
+
+                                status.setText("🔒 Locked");
+                                status.setTextColor(Color.parseColor("#616161"));
+                                check.setEnabled(false);
+                                check.setChecked(false);
+                                break;
+
+                            case "washing":
+
+                                status.setText("🧼 Washing");
+                                status.setTextColor(Color.parseColor("#2196F3"));
+                                check.setEnabled(false);
+                                check.setChecked(false);
+                                break;
+
+                            case "booked":
+
+                                status.setText("Booked till " +
+                                        new SimpleDateFormat("dd MMM HH:mm", Locale.getDefault())
+                                                .format(new Date(item.getNextAvailableMs())));
+                                status.setTextColor(Color.RED);
+                                check.setEnabled(false);
+                                check.setChecked(false);
+                                break;
+
+                            default:
+
+                                status.setText("Available");
+                                status.setTextColor(Color.parseColor("#2E7D32"));
+                                check.setEnabled(true);
                         }
 
                         check.setChecked(selectedItems.contains(item));
@@ -355,6 +378,7 @@ public class NewBookingActivity extends AppCompatActivity {
 
                     if (query.length() < 2) return;
 
+
                     List<ItemModel> suggestions = new ArrayList<>();
 
                     try {
@@ -366,16 +390,17 @@ public class NewBookingActivity extends AppCompatActivity {
 
                             String itemCode = item.getItemNo().toUpperCase();
 
-                            if (itemCode.startsWith(prefix)) {
+                            if (!itemCode.startsWith(prefix)) continue;
 
-                                int itemNumber = Integer.parseInt(itemCode.replaceAll("[^0-9]", ""));
+                            int itemNumber = Integer.parseInt(itemCode.replaceAll("[^0-9]", ""));
 
-                                if (itemNumber > number && item.isAvailable()) {
-                                    suggestions.add(item);
-                                }
+                            if (itemNumber <= number) continue;
+
+                            if(item.getStatus().equals("available")){
+                                suggestions.add(item);
                             }
 
-                            if (suggestions.size() >= 5) break;
+                            if(suggestions.size() >= 5) break;
                         }
 
                     } catch (Exception ignored) {}
@@ -511,9 +536,6 @@ public class NewBookingActivity extends AppCompatActivity {
         if(RentPaidNow.getText().toString().isEmpty()){
             RentPaidNow.setText("0");
         }
-
-        setupCurrencyFormatter(etTotalRent);
-        setupCurrencyFormatter(RentPaidNow);
 
         SimpleDateFormat format =
                 new SimpleDateFormat("dd MMM HH:mm", Locale.getDefault());
@@ -884,14 +906,11 @@ public class NewBookingActivity extends AppCompatActivity {
         String totalStr = etTotalRent.getText().toString().trim();
 
         // Get rent paid now
-        String rentPaidStr = RentPaidNow.getText().toString().trim();
-        rentPaidStr = rentPaidStr.replace("₹","").replace(",","").trim();
-        double rentPaidValue = rentPaidStr.isEmpty() ? 0 : Double.parseDouble(rentPaidStr);
+        double rentPaidValue = getCurrencyValue(RentPaidNow);
 
         // Get deposit collected
-        String depositStr = etdeposit.getText().toString().trim();
-        depositStr = depositStr.replace("₹","").replace(",","").trim();
-        double depositValue = depositStr.isEmpty() ? 0 : Double.parseDouble(depositStr);
+
+        double depositValue = getCurrencyValue(etdeposit);
 
 
         // 2. Final Client-Side Validation
@@ -951,8 +970,7 @@ public class NewBookingActivity extends AppCompatActivity {
 
 
             // Put financial values
-            totalStr = totalStr.replace("₹","").replace(",","").trim();
-            double totalValue = totalStr.isEmpty() ? 0 : Double.parseDouble(totalStr);
+            double totalValue = getCurrencyValue(etTotalRent);
 
             jsonBody.put("total", totalValue);
             jsonBody.put("rentPaid", rentPaidValue);
@@ -1002,50 +1020,60 @@ public class NewBookingActivity extends AppCompatActivity {
 
     private void setupCurrencyFormatter(EditText editText){
 
-        editText.addTextChangedListener(new TextWatcher() {
+        editText.addTextChangedListener(new TextWatcher(){
 
-            private boolean isFormatting;
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            private String current = "";
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after){}
 
             @Override
-            public void afterTextChanged(Editable s) {
+            public void onTextChanged(CharSequence s, int start, int before, int count){}
 
-                if(isFormatting) return;
+            @Override
+            public void afterTextChanged(Editable s){
 
-                isFormatting = true;
+                if(s.toString().equals(current)){
+                    return;
+                }
+
+                editText.removeTextChangedListener(this);
+
+                String clean = s.toString().replaceAll("[₹,\\s]", "");
+
+                if(clean.isEmpty()){
+                    current = "";
+                    editText.setText("");
+                    editText.addTextChangedListener(this);
+                    return;
+                }
 
                 try{
 
-                    String clean = s.toString()
-                            .replace("₹","")
-                            .replace(",","")
-                            .trim();
+                    long parsed = Long.parseLong(clean);
 
-                    if(clean.isEmpty()){
-                        editText.setText("");
-                        isFormatting = false;
-                        return;
-                    }
+                    String formatted = String.format("₹ %,d", parsed);
 
-                    long value = Long.parseLong(clean);
-
-                    String formatted =
-                            "₹" + NumberFormat.getNumberInstance(Locale.getDefault())
-                                    .format(value);
+                    current = formatted;
 
                     editText.setText(formatted);
                     editText.setSelection(formatted.length());
 
-                }catch(Exception ignored){}
+                }catch(NumberFormatException e){
+                    e.printStackTrace();
+                }
 
-                isFormatting = false;
+                editText.addTextChangedListener(this);
             }
         });
     }
 
+    private long getCurrencyValue(EditText et){
+
+        String clean = et.getText().toString().replaceAll("[₹,\\s]", "");
+
+        if(clean.isEmpty()) return 0;
+
+        return Long.parseLong(clean);
+    }
 }

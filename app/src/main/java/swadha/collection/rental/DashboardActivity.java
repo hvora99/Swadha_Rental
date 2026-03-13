@@ -42,6 +42,9 @@ public class DashboardActivity extends AppCompatActivity {
     private SearchView searchView;
     private TextView tvPickupTodayCount;
     private RequestQueue queue;
+    private Handler autoRefreshHandler = new Handler();
+    private Runnable autoRefreshRunnable;
+
 
     // Put your URL here once so you don't have to keep pasting it
     private static final String webAppUrl = "https://script.google.com/macros/s/AKfycby9Bfc8ohJDS6bvWDu1I8E21yxzRg_GQBhpRXkzY9hLfcKrDlqzxYe2LyMl4Vmb6CXj/exec";
@@ -51,6 +54,18 @@ public class DashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_dashboard);
 
         queue = Volley.newRequestQueue(this);
+
+
+        autoRefreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+
+                fetchData();   // refresh dashboard
+
+                autoRefreshHandler.postDelayed(this, 30000); // 30 seconds
+            }
+        };
+
 
         ImageButton btnOpenInventory = findViewById(R.id.btnOpenInventory); // New Button
         rvDailyReturns = findViewById(R.id.rvDailyReturns);
@@ -133,7 +148,14 @@ public class DashboardActivity extends AppCompatActivity {
         try {
             jsonBody.put("action", "markReceived");
             jsonBody.put("orderId", booking.getOrderId());
-            jsonBody.put("itemNo", booking.getFirstItem());
+
+            JSONArray arr = new JSONArray();
+            for(String code : booking.getItemCodes()){
+                arr.put(code);
+            }
+
+            jsonBody.put("items", arr);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -186,10 +208,11 @@ public class DashboardActivity extends AppCompatActivity {
         );
 
         request.setRetryPolicy(new DefaultRetryPolicy(
-                30000,
+                8000,
                 0,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+                1f
         ));
+
 
         queue.add(request);    }
 
@@ -234,18 +257,21 @@ public class DashboardActivity extends AppCompatActivity {
 
 
 
-    // Refresh data when returning from NewBookingActivity
     @Override
     protected void onResume() {
         super.onResume();
 
-        loadFromCache();   // instant
+        loadFromCache();
 
-        new Handler().postDelayed(() -> {
-            fetchData();   // background refresh
-        }, 1500);
+        autoRefreshHandler.postDelayed(autoRefreshRunnable, 30000);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
+    }
 
 
 
@@ -254,11 +280,45 @@ public class DashboardActivity extends AppCompatActivity {
 
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-            loadFromCache();
-            fetchData();
+        if(requestCode == 100 && resultCode == RESULT_OK){
+
+            if(data != null && data.getBooleanExtra("refresh",false)){
+
+                // clear cache
+                getSharedPreferences("RentalPrefs", MODE_PRIVATE)
+                        .edit()
+                        .remove("cache_data")
+                        .apply();
+
+                fetchData(); // reload only when necessary
+            }
         }
     }
+
+
+
+    private void removeOrderLocally(String orderId){
+
+        for(int i=0;i<bookingList.size();i++){
+
+            if(bookingList.get(i).getOrderId().equals(orderId)){
+
+                bookingList.remove(i);
+
+                adapter.notifyItemRemoved(i);
+
+                break;
+            }
+        }
+
+        tvReturnCount.setText(String.valueOf(bookingList.size()));
+
+        calculateTotalBalance();
+    }
+
+
+
+
 
     private void loadDailyStats() {
         // 1. Stop any current scrolling
@@ -285,6 +345,8 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void fetchData() {
+        if(isLoading) return;
+
         isLoading = true;
         // Note: Removed start/limit params from URL
         JsonArrayRequest request =  new JsonArrayRequest(Request.Method.GET,
@@ -300,8 +362,13 @@ public class DashboardActivity extends AppCompatActivity {
                     Toast.makeText(this, "Offline Mode: Showing cached data", Toast.LENGTH_SHORT).show();
                 });
 
-        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(60000, 0, 1f));
-        queue.add(request);    }
+        request.setRetryPolicy(new DefaultRetryPolicy(
+                8000,
+                0,
+                1f
+        ));
+        queue.add(request);
+    }
 
 
 
@@ -347,6 +414,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                         booking.addItem(
                                 item.getString("itemNo"),
+                                item.optString("itemName",""),
                                 item.getString("status"),
                                 item.optDouble("rent",0),
                                 item.optDouble("deposit",0)

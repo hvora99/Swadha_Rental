@@ -100,14 +100,14 @@
             if(status.equalsIgnoreCase("Returned")){
                 color = Color.parseColor("#2E7D32");   // green
             }
-            else if(status.equalsIgnoreCase("PickedUp")){
-                color = Color.parseColor("#FB8C00");   // orange
-            }
             else if(returnToday){
                 color = Color.parseColor("#D32F2F");   // red (return today)
             }
             else if(pickupToday){
                 color = Color.parseColor("#1976D2");   // blue (pickup today)
+            }
+            else if(status.equalsIgnoreCase("PickedUp")){
+                color = Color.parseColor("#FB8C00");   // orange
             }
             else{
                 color = Color.parseColor("#800020");   // default
@@ -148,20 +148,6 @@
 
             else if(status.equalsIgnoreCase("PickedUp")){
 
-                if(actualPickupMs > 0){
-
-                    long diffPickup = now - actualPickupMs;
-                    long hrsPickup = Math.max(1, diffPickup / (1000 * 60 * 60));
-
-                    if(isToday(new Date(actualPickupMs))){
-
-                        holder.tvReturnUrgency.setText("✓ Picked up " + hrsPickup + "h ago");
-                        holder.tvReturnUrgency.setTextColor(Color.parseColor("#2E7D32"));
-
-                    }
-
-                }
-
                 long diffReturn = returnMs - now;
                 long hrsReturn = diffReturn / (1000 * 60 * 60);
 
@@ -182,6 +168,18 @@
                     holder.tvReturnUrgency.setText("Return Today");
                     holder.tvReturnUrgency.setTextColor(Color.parseColor("#FB8C00"));
 
+                }
+                else if(actualPickupMs > 0){
+
+                    long diffPickup = now - actualPickupMs;
+                    long hrsPickup = Math.max(1, diffPickup / (1000 * 60 * 60));
+
+                    if(isToday(new Date(actualPickupMs))){
+
+                        holder.tvReturnUrgency.setText("✓ Picked up " + hrsPickup + "h ago");
+                        holder.tvReturnUrgency.setTextColor(Color.parseColor("#2E7D32"));
+
+                    }
                 }
             }
 
@@ -216,7 +214,9 @@
                         new ArrayList<>(booking.getItems())
                 );
 
-                ((Activity) v.getContext()).startActivityForResult(intent, 100);            });
+                ((Activity) v.getContext()).startActivityForResult(intent, 100);
+
+            });
 
             double totalRent = booking.getTotalRent();
             double rentPaid = booking.getRentPaid();

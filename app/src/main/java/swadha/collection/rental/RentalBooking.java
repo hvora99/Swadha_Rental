@@ -9,7 +9,7 @@ import java.util.List;
 public class RentalBooking {
 
     private String timestamp;
-    private String itemNo;
+    private String itemName;
     private String name;
     private String phone;
     private long washMs;
@@ -130,8 +130,8 @@ public class RentalBooking {
         return items;
     }
 
-    public void addItem(String itemNo, String status, double rent, double deposit){
-        items.add(new ItemStatus(itemNo, status, rent, deposit));
+    public void addItem(String itemNo, String itemName, String status, double rent, double deposit){
+        items.add(new ItemStatus(itemNo, itemName, status, rent, deposit));
     }
 
     public long getWashMs() { return washMs; }
@@ -153,9 +153,11 @@ public class RentalBooking {
         private String status;
         private double rent;
         private double deposit;
+        String itemName;
 
-        public ItemStatus(String itemNo, String status, double rent, double deposit){
+        public ItemStatus(String itemNo, String itemName, String status, double rent, double deposit){
             this.itemNo = itemNo;
+            this.itemName = itemName;
             this.status = status;
             this.rent = rent;
             this.deposit = deposit;
@@ -175,6 +177,10 @@ public class RentalBooking {
 
         public double getDeposit(){
             return deposit;
+        }
+
+        public String getItemName(){
+            return itemName;
         }
     }
 

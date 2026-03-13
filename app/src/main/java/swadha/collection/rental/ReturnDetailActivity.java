@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.button.MaterialButton;
@@ -53,10 +54,18 @@ public class ReturnDetailActivity extends AppCompatActivity {
     private double totalRent;
     private double deposit;
     private double rentPaid;
+    private AlertDialog loadingDialog;
+    private RequestQueue queue;
+    private boolean isProcessing = false;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_return_detail);
+
+        queue = Volley.newRequestQueue(this);
+
 
         itemNo = getIntent().getStringExtra("itemNo");
         String name = getIntent().getStringExtra("name");
@@ -124,8 +133,8 @@ public class ReturnDetailActivity extends AppCompatActivity {
             Log.d("ITEM_TYPE", obj.getClass().getName());
         }
 
-        renderItemTimeline(extractItemCodes(itemsList), pickupMs, returnMs);
-
+        renderItemTimeline(itemsList, pickupMs, returnMs);
+        updateButtonStates();
 // Set Data
         tvItem.setText(items);
         tvName.setText(name);
@@ -268,26 +277,27 @@ public class ReturnDetailActivity extends AppCompatActivity {
         });
 
 
-        if (status.equalsIgnoreCase("Booked")) {
+    }
 
-            setButtonState(btnPickedUp, true);
-            setButtonState(btnCancel, true);
-            setButtonState(BtnMarkReceived, false);
+    private void updateButtonStates(){
 
+        boolean hasBooked = false;
+        boolean hasPickedUp = false;
+
+        for(RentalBooking.ItemStatus item : itemsList){
+
+            if(item.getStatus().equals("Booked")){
+                hasBooked = true;
+            }
+
+            if(item.getStatus().equals("PickedUp")){
+                hasPickedUp = true;
+            }
         }
-        else if (status.equalsIgnoreCase("PickedUp")) {
 
-            setButtonState(btnPickedUp, false);
-            setButtonState(btnCancel, false);
-            setButtonState(BtnMarkReceived, true);
-
-        }
-        else {
-
-            setButtonState(btnPickedUp, false);
-            setButtonState(btnCancel, false);
-            setButtonState(BtnMarkReceived, false);
-        }
+        setButtonState(btnPickedUp, hasBooked);
+        setButtonState(btnCancel, hasBooked);
+        setButtonState(BtnMarkReceived, hasPickedUp);
     }
 
     private ArrayList<RentalBooking.ItemStatus> getPickupItems(){
@@ -366,10 +376,14 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
             RentalBooking.ItemStatus item = items.get(i);
 
-            itemNames[i] = item.getItemNo() +
-                    "  ₹" + item.getRent() +
-                    "  Dep ₹" + item.getDeposit() +
-                    " (" + item.getStatus() + ")";
+            itemNames[i] =
+                    item.getItemNo()
+                            + " - "
+                            + item.getItemName()
+                            + " ("
+                            + item.getStatus()
+                            + ")";
+
             checked[i] = false;
         }
 
@@ -509,7 +523,7 @@ public class ReturnDetailActivity extends AppCompatActivity {
             Button confirm = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
 
             confirm.setOnClickListener(v -> {
-
+                confirm.setEnabled(false);
                 ArrayList<String> selectedItems = new ArrayList<>();
 
                 for(int i=0;i<items.size();i++){
@@ -585,6 +599,18 @@ public class ReturnDetailActivity extends AppCompatActivity {
                                 ArrayList<String> items,
                                 double paidNow){
 
+        if(isProcessing) return;
+        isProcessing = true;
+
+        disableActionButtons();
+
+        Intent intent = new Intent();
+        intent.putExtra("refresh", true);
+        intent.putExtra("orderId", orderId);
+
+        setResult(RESULT_OK, intent);
+        finish();
+
         JSONObject params = new JSONObject();
 
         try {
@@ -600,27 +626,28 @@ public class ReturnDetailActivity extends AppCompatActivity {
                 Request.Method.POST,
                 webAppUrl,
                 params,
-                response -> {
-
-                    Toast.makeText(this,
-                            "Items Picked Up",
-                            Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent();
-                    intent.putExtra("refresh", true);
-                    setResult(RESULT_OK, intent);
-                    finish();
-
-                },
+                response -> {},
                 error -> Log.e("API_ERROR",error.toString())
         );
 
-        Volley.newRequestQueue(this).add(request);
+        queue.add(request);
     }
+
 
     private void cancelBookingWithRefund(String orderId,
                                          ArrayList<String> items,
                                          double refundAmount){
+
+        if(isProcessing) return;
+        isProcessing = true;
+
+        disableActionButtons();
+
+        Intent intent = new Intent();
+        intent.putExtra("refresh", true);
+        intent.putExtra("orderId", orderId);
+        setResult(RESULT_OK, intent);
+        finish();
 
         JSONObject params = new JSONObject();
 
@@ -637,27 +664,27 @@ public class ReturnDetailActivity extends AppCompatActivity {
                 Request.Method.POST,
                 webAppUrl,
                 params,
-                response -> {
-
-                    Toast.makeText(this,
-                            "Items Cancelled",
-                            Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent();
-                    intent.putExtra("refresh", true);
-                    setResult(RESULT_OK, intent);
-                    finish();
-
-                },
+                response -> {},
                 error -> Log.e("API_ERROR",error.toString())
         );
 
-        Volley.newRequestQueue(this).add(request);
+        queue.add(request);
     }
+
 
     private void markItemAsReturned(String orderId,
                                     List<String> items,
                                     double refundAmount){
+        if(isProcessing) return;
+        isProcessing = true;
+        disableActionButtons();
+
+        // Close activity immediately and refresh dashboard
+        Intent intent = new Intent();
+        intent.putExtra("refresh", true);
+        intent.putExtra("orderId", orderId);
+        setResult(RESULT_OK, intent);
+        finish();
 
         JSONObject params = new JSONObject();
 
@@ -675,26 +702,34 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
             params.put("items",arr);
 
-        }catch(Exception e){}
+        }catch(Exception e){
+            e.printStackTrace();
+        }
 
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.POST,
                 webAppUrl,
                 params,
-                response->{
-
-                    Toast.makeText(this,"Items Returned",Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent();
-                    intent.putExtra("refresh", true);
-                    setResult(RESULT_OK, intent);
-                    finish();
-
+                response -> {
+                    // no UI needed, dashboard already refreshed
                 },
-                error->Log.e("API_ERROR",error.toString())
+                error -> {
+                    Log.e("API_ERROR", error.toString());
+                }
         );
 
-        Volley.newRequestQueue(this).add(request);
+        queue.add(request);
+    }
+
+    private void disableActionButtons(){
+
+        btnPickedUp.setEnabled(false);
+        btnCancel.setEnabled(false);
+        BtnMarkReceived.setEnabled(false);
+
+        btnPickedUp.setAlpha(0.4f);
+        btnCancel.setAlpha(0.4f);
+        BtnMarkReceived.setAlpha(0.4f);
     }
 
 
@@ -705,6 +740,27 @@ public class ReturnDetailActivity extends AppCompatActivity {
             button.setAlpha(1f);
         } else {
             button.setAlpha(0.4f);   // dark faded look
+        }
+    }
+
+
+    private void showLoading(String message){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setCancelable(false);
+
+        builder.setMessage(message);
+
+        loadingDialog = builder.create();
+
+        loadingDialog.show();
+    }
+
+    private void hideLoading(){
+
+        if(loadingDialog != null && loadingDialog.isShowing()){
+            loadingDialog.dismiss();
         }
     }
 
@@ -756,9 +812,10 @@ public class ReturnDetailActivity extends AppCompatActivity {
     }
 
 
-    private void renderItemTimeline(ArrayList<String> items,
+    private void renderItemTimeline(ArrayList<RentalBooking.ItemStatus> items,
                                     long pickupMs,
                                     long returnMs){
+
 
         SimpleDateFormat format =
                 new SimpleDateFormat("dd MMM HH:mm", Locale.getDefault());
@@ -770,7 +827,7 @@ public class ReturnDetailActivity extends AppCompatActivity {
 
         layoutItemTimeline.removeAllViews();
 
-        for(String item : items){
+        for(RentalBooking.ItemStatus item : items){
 
             View row = getLayoutInflater()
                     .inflate(R.layout.item_timeline_row,null);
@@ -778,7 +835,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
             TextView tvItem = row.findViewById(R.id.tvTimelineItem);
             TextView tvTime = row.findViewById(R.id.tvTimelineTime);
 
-            tvItem.setText(item);
+            tvItem.setText(
+                    item.getItemNo() + " - " + item.getItemName()
+            );
 
             String timeline =
                     format.format(new Date(pickupMs))
