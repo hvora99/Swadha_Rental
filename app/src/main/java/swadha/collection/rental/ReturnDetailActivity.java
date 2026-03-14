@@ -305,8 +305,9 @@ public class ReturnDetailActivity extends AppCompatActivity {
         ArrayList<RentalBooking.ItemStatus> list = new ArrayList<>();
 
         for(RentalBooking.ItemStatus item : itemsList){
-
-            if(item.getStatus().equals("Booked")){
+            Log.d("ITEM_STATUS_CHECK",
+                    item.getItemNo() + " -> " + item.getStatus());
+            if(item.getStatus().equalsIgnoreCase("Booked")){
                 list.add(item);
             }
         }

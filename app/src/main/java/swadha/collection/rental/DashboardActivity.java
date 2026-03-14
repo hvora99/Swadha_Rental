@@ -62,7 +62,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                 fetchData();   // refresh dashboard
 
-                autoRefreshHandler.postDelayed(this, 30000); // 30 seconds
+                autoRefreshHandler.postDelayed(this, 15000);
             }
         };
 
@@ -171,7 +171,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                     for (int i = 0; i < bookingList.size(); i++) {
 
-                        if (bookingList.get(i).getTimestamp().equals(booking)) {
+                        if (bookingList.get(i).getOrderId().equals(booking.getOrderId())) {
                             bookingList.remove(i);
                             removedPosition = i;
                             break;
@@ -262,7 +262,7 @@ public class DashboardActivity extends AppCompatActivity {
         super.onResume();
 
         loadFromCache();
-
+        fetchData();   // immediate refresh
         autoRefreshHandler.postDelayed(autoRefreshRunnable, 30000);
     }
 
@@ -282,15 +282,9 @@ public class DashboardActivity extends AppCompatActivity {
 
         if(requestCode == 100 && resultCode == RESULT_OK){
 
-            if(data != null && data.getBooleanExtra("refresh",false)){
+            if(data != null && data.getBooleanExtra("refresh", false)){
 
-                // clear cache
-                getSharedPreferences("RentalPrefs", MODE_PRIVATE)
-                        .edit()
-                        .remove("cache_data")
-                        .apply();
-
-                fetchData(); // reload only when necessary
+                forceRefresh();   // always reload from server
             }
         }
     }
@@ -323,9 +317,21 @@ public class DashboardActivity extends AppCompatActivity {
     private void loadDailyStats() {
         // 1. Stop any current scrolling
         rvDailyReturns.stopScroll();
-        loadFromCache();
-
         fetchData();
+    }
+
+    private void forceRefresh(){
+
+        // clear cached data
+        getSharedPreferences("RentalPrefs", MODE_PRIVATE)
+                .edit()
+                .remove("cache_data")
+                .apply();
+
+        bookingList.clear();
+        adapter.notifyDataSetChanged();
+
+        fetchData(); // fetch fresh data
     }
 
     private void saveToCache(String jsonResponse) {
@@ -353,13 +359,23 @@ public class DashboardActivity extends AppCompatActivity {
                 webAppUrl + "?mode=dashboard",
                 null,
                 response -> {
-                    saveToCache(response.toString()); // Save the fresh data
-                    parseJson(response.toString());   // Display it
-                    isLoading = false;
+
+                    try {
+                        saveToCache(response.toString());
+                        parseJson(response.toString());
+                    } finally {
+                        isLoading = false;
+                    }
                 },
                 error -> {
+
                     isLoading = false;
-                    Toast.makeText(this, "Offline Mode: Showing cached data", Toast.LENGTH_SHORT).show();
+
+                    loadFromCache();
+
+                    Toast.makeText(this,
+                            "Offline mode: showing cached data",
+                            Toast.LENGTH_SHORT).show();
                 });
 
         request.setRetryPolicy(new DefaultRetryPolicy(
